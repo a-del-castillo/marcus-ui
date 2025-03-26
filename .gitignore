@@ -1,0 +1,4 @@
+/.eslintrc.cjs
+/dist
+/log.txt
+/node_modules
