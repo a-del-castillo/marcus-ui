@@ -5,8 +5,10 @@ import { Edit, DeleteForever, Clear, Save } from "@mui/icons-material";
 const Part = (props) => {
     // const { part, onDelete, onUpdate, editableCard } = props
 	const { part } = props
-    const [editMode, setEditMode] = useState(false);
+    const [editMode, setEditMode] = useState(localStorage.role === 'admin');
     const editableCard = false
+
+	console.log('localStorage.role', localStorage.role)
 	// const [newTitle, setNewTitle] = useState(book.title);
 	// const [newAuthor, setNewAuthor] = useState(book.author);
 	// const [newStatus, setNewStatus] = useState(book.status);

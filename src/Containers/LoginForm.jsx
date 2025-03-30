@@ -3,39 +3,44 @@ import { connect } from "react-redux";
 import axios from "axios";
 
 const LoginForm = (props) => {
-    const { backEndRoot, loginData, setLoginData } = props;
+    const { backEndRoot, loginData, setLoginData, session_clean, set_session, isLogged } = props;
     const [error, setError] = useState(null);
-    const [isLogged, setIsLogged] = useState(false)
-    const [username, setUsername] = useState('')
+    const [username, setUsername] = useState(null)
 
+    const log_off = () => {
+        setUsername(null)
+        session_clean()
+    }
+
+    const log_in = (data) => {
+        setUsername(data.attributes.username);
+        set_session(data);
+    }
+    
     const fetchLoggedInUser = async () => {
         if (localStorage.token && localStorage.token !== "null") {
             const token = localStorage.token;
             await axios.get(`${backEndRoot}/auto-login`,
             {
                 headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    Authorization: `Bearer ${token}`,
                 }
-            }
-            )
+            })
             .then((res) => {
                 if ( res.status === 200) {
-                    setIsLogged(true)
                     const {data} = res
-                    setUsername(data.data.attributes.username)
-                }else{
-                    setIsLogged(false)
-                    localStorage.removeItem("token");
+                    log_in(data.data)
+                }else {
+                    log_off();
                 }
             })
             .catch((err) => {
                 console.log(err.response?.data?.message ? err.response.data.message : err.message);
             });
         }else{
-            setIsLogged(false)
-            localStorage.removeItem("token");
+            log_off();
         }
     }
 
@@ -52,12 +57,7 @@ const LoginForm = (props) => {
 
     const handleLogOut = (e) => {
         e.preventDefault();
-        setIsLogged(false)
-        setLoginData({
-            username: "",
-            password: ""
-        });
-        localStorage.removeItem("token");
+        log_off()  
     };
 
     const handleSubmit = async (e) => {
@@ -82,13 +82,11 @@ const LoginForm = (props) => {
             if ( res.status === 200) {
                 const {data} = res
                 if (data.status !== "error") {
-                    localStorage.setItem("token", data.data.attributes.token);
-                    localStorage.setItem("username", credentials.username);
-                    setIsLogged(true);
-                    setUsername(credentials.username);
+                    log_in(data.data)
+                    
                 }else{
                     setError(data.message);
-                    setIsLogged(false);
+                    log_off();
                 }        
             }
         })
@@ -98,12 +96,12 @@ const LoginForm = (props) => {
     }
   
     return (
-        <div>
+        <div className="LoginForm-wrapper">
             {isLogged ? (<div>
                 Welcome back {username}<br/><a onClick={handleLogOut} href="#">Sign out</a> 
             </div>) :   
             <form onSubmit={handleSubmit}>
-                <h3>Login!</h3>
+                <h3>Login</h3>
                 {error && <div>
                     <span>{error}</span>
                 </div>}

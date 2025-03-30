@@ -1,47 +1,80 @@
 import React, { useState } from "react";
-import PartList from "./Components/PartList.jsx";
+import PartList from "./Containers/PartList.jsx";
 import LoginForm from "./Containers/LoginForm.jsx";
+import Cart from "./Containers/Cart.jsx";
 import Configurator from "./Containers/Configurator.jsx";
 
 const backEndRoot = import.meta.env.DEV ? "http://127.0.0.1:3000" : "https://antonio-marcus.onrender.com";
-const listsAPIEndpoint = `${backEndRoot}/api/v1`;
 
 // A component to display the CRUD app
 const App = () => {
+	const [isLogged, setIsLogged] = useState(false)
+	const [userRole, setUserRole] = useState(null)
 	const [loginData, setLoginData] = useState({
 		username: "",
 		password: "",
 	});
+	const [cartData, setCartData] = useState({
+		configs:[],
+		parts: []
+	})
 
-	// Fetch the data from the API
-	// const { data, loading } = useFetch(`${listsAPIEndpoint}/parts`);
+	const session_clean = () => {
+        setLoginData({
+            username: "",
+            password: ""
+        });
+		setIsLogged(false)
+		setUserRole(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("username");
+        localStorage.removeItem("role");
+    }
 
-	/*
-	useEffect(() => {
-		if (selectedListID) {
-			setEditedListName(lists[selectedListID].listName)
-			axios.get(`${listsAPIEndpoint}/part/${selectedListID}`)
-				.then((res) => {
-					lists[selectedListID] = res.data
-					setLists({ ...lists })
-				})
-				.catch((err) => {
-					setError(err.response?.data?.message ? err.response.data.message : err.message)
-				})
+    const set_session = (data) => {
+        setIsLogged(true);
+		setUserRole(data.attributes.role);
+        localStorage.setItem("token", data.attributes.token);
+        localStorage.setItem("user_id", data.attributes.user_id);
+        localStorage.setItem("username", data.attributes.username);
+        localStorage.setItem("role", data.attributes.role);
+    }
+
+	const addToCart = (element, type = 'part') => {
+		console.log('addToCart', element)
+		const tmpConfigs = cartData.configs || []
+		let tmpParts = cartData.parts || []
+		if (type === 'part') {
+			let partAlreadyInCart = false
+			tmpParts = cartData.parts.reduce((acc, part) => {
+				if (part.id === element.id) {
+					partAlreadyInCart = true
+					part.quantity += 1
+					part.price = parseFloat(element.price) + parseFloat(part.price)
+				}
+				acc.push(part);
+				return acc;
+			}, []);
+			if (!partAlreadyInCart) {
+				tmpParts.push({id: element.id, name: element.name, quantity: 1, price: element.price})				
+			}
+		} else {
+			const configObject = {
+				name:  'Build ' + tmpConfigs.length+1,
+				index: tmpConfigs.length+1, 
+				price: element.price, 
+				quantity: 1,
+				parts: element.parts
+			}
+			tmpConfigs.push(configObject)
 		}
-	}, [selectedListID])
-	*/
-	
-	/*
-	// Initialize the lists state with the fetched data
-	useEffect(() => {
-		if (data) {
-			setParts(data);
-			// formatCategories(data);
-			// setSelectedListID(Object.keys(data)[0]);
-		}
-	}, [data]);
-	*/
+
+		setCartData({
+			configs: tmpConfigs,
+			parts: tmpParts
+		})
+	}
 
 	return (
 		<div className="app">
@@ -53,17 +86,30 @@ const App = () => {
 						<LoginForm 
 							backEndRoot={backEndRoot}
 							loginData={loginData}
-							setLoginData={setLoginData} 
+							setLoginData={setLoginData}
+							session_clean={session_clean}
+							set_session={set_session}
+							isLogged={isLogged}
+						/>
+						<Cart 
+							backEndRoot={backEndRoot}
+							loginData={loginData}
+							isLogged={isLogged}
+							cartData={cartData}
+							setCartData={setCartData}
 						/>
 					</div>
 					<div className="module-wrapper">
 						<Configurator
 							backEndRoot={backEndRoot}
+							addToCart={addToCart}
 						/>
 					</div>
 					<div className="module-wrapper">
 						<PartList
+							userRole={userRole}
 							backEndRoot={backEndRoot}
+							addToCart={addToCart}
 						/>
 					</div>
 				</>

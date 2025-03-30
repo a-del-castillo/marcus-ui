@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { ShoppingCart } from "@mui/icons-material";
 import { formatPrice, usePost } from "../actions/index.js"
 import axios from "axios"; 
 
 
 const Configurator = (props) => {
-    const { backEndRoot } = props;
+    const { backEndRoot, addToCart } = props;
     const [error, setError] = useState(null);
     const [config, setConfig] = useState({})
     const [configIds, setConfigIds] = useState({ids:[]})
@@ -34,7 +35,8 @@ const Configurator = (props) => {
             tmpPartsPrices.push({id: part_id, price: tmpPrice})
         }
         setPartPrices(tmpPartsPrices)
-    }
+   }
+
     const formatCategories = (data) => {
 		const tmpCategories = []
 		data.forEach((part) => {
@@ -64,13 +66,22 @@ const Configurator = (props) => {
         })})
     }
     const handleAddToCart = (e) => {
-        e.preventDefault();
+        if( partPrices.length === 0 ) return
+        const tmpConfig = {
+            price: partPrices?.map(a => parseFloat(a.price)).reduce((partialSum, a) => partialSum + a, 0).toFixed(2), 
+            parts: []
+        }
+        
+        Object.values(config).forEach( (part_id, index) =>  {
+            tmpConfig.parts.push({id: part_id, "name": part_id, quantity: 1, price: partPrices[index].price})
+        })
+        
+        addToCart(tmpConfig, 'config')
     };
 
 
     const Category = (props) => {
         const { category } = props;
-        const tmpOptions = []
         const optionList = [<option key="0" value="0">Select {category}</option>]
         const price = partPrices.find((element) => element.id === config[category])?.price
         parts.forEach(part => {
@@ -95,12 +106,6 @@ const Configurator = (props) => {
         )
     }
 
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  };
-
-  
   return (
     <div>
         <hr/>
@@ -113,11 +118,16 @@ const Configurator = (props) => {
                     return (<Category key={i} category={category} />) 
                     })}
                     {partPrices.length > 0 && 
-                        (<div><br/><b>Total:</b> {formatPrice(partPrices?.map(a => parseInt(a.price,10)).reduce((partialSum, a) => partialSum + a, 0))}</div>)
+                        (<div><br/><b>Total:</b> {formatPrice(partPrices?.map(a => parseFloat(a.price)).reduce((partialSum, a) => partialSum + a, 0).toFixed(2))}</div>)
                 }</>)
             }
             
-            <div><br/><a onClick={handleAddToCart} href="#">Add bike configuration to cart</a> </div>
+            <div>
+                <label className="title-with-icon button edit-color " onClick={handleAddToCart}>
+                    <ShoppingCart fontSize="medium" />
+                    Add bike configuration to cart
+                </label>
+            </div>
         </div>
     </div>
   );
