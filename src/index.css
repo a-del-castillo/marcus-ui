@@ -317,7 +317,7 @@ div.LoginForm-wrapper{
 	border-radius: 7px;
 	float: left;
 	min-width: 300px;
-	height: 180px;
+	min-height: 180px;
 	width: calc(50% - 10px);
 	padding: 5px 15px;
 	filter: drop-shadow(3px 3px 7px #000000);
@@ -345,6 +345,22 @@ div.cart-detail{
 	font-size: 12px;
 	
 }
+
+a.sign-in-link{
+	padding-left: 10px;
+	font-size: 14px;
+}
+
+div.sign-in-wrapper{
+	border-radius: 15px;
+	position: absolute;
+    width: 100%;
+    left: 0;
+    top: 0;
+    padding: 5px 15px;
+    background-color: #242424;
+}
+
 div.cart-detail-parts{
 	width: 100%;
 	padding-left: 2px;;

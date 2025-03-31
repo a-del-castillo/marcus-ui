@@ -6,7 +6,7 @@ import axios from "axios";
 
 
 const Cart = (props) => {
-    const { backEndRoot, loginData, isLogged, setCartData, cartData } = props;
+    const { backEndRoot, loginData, isLogged, setCartData, cartData, removeFromCart } = props;
     const [totalPrice, setTotalPrice] = useState(0);
 
     const configsTotal = cartData?.configs.map(a => parseFloat(a.price)).reduce((partialSum, a) => partialSum + a, 0)
@@ -15,16 +15,7 @@ const Cart = (props) => {
     const hoverText = `Configs cost: ${formatPrice(configsTotal)}\nParts cost: ${formatPrice(partsTotal)}`
 
     const handleRemoveFromCart = (e) => {
-        const type = e.currentTarget.attributes['data-type'].value
-        const index = e.currentTarget.attributes['data-index'].value
-        const tmpList = type === 'parts' ? cartData.parts : cartData.configs
-
-        tmpList.splice(index, 1)
-        
-        setCartData({
-            ...cartData,
-            [type]:tmpList
-        })
+        removeFromCart(e);
     }
 
     if (localStorage.token && localStorage.token !== "null" && !isLogged) {
@@ -32,36 +23,40 @@ const Cart = (props) => {
     }
 
     const handleOnClickPay = async (e) => {
-        const headers = {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${localStorage.token}`,
-        }
+        if( cartData.configs.length === 0 && cartData.parts.length === 0) return null
+        if (localStorage.token && localStorage.token !== "null" && isLogged) {
+            const headers = {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${localStorage.token}`,
+            }
 
-        const formattedConfigs = []
-        cartData.configs.forEach( (tmpConfig) =>{
-            const tmpPartsList = tmpConfig.parts.map(part => parseInt(part.id, 10))
-            tmpConfig.parts = tmpPartsList
-            formattedConfigs.push(tmpConfig)
-        })
-        const order = {
-            "status": "paid",
-            "parts_ids": cartData.parts.map(part => part.id),
-            "configs": formattedConfigs
-        }
-        
-        console.log(order)
-
-        const result = await axios.post(`${backEndRoot}/api/v1/orders`, { order }, { headers });
-        console.log('result', result)
-        if (result.status === 200) {
-            alert("Order completed!");
-            setCartData({
-                configs:[],
-                parts: []
+            const formattedConfigs = []
+            cartData.configs.forEach( (tmpConfig) =>{
+                const tmpPartsList = tmpConfig.parts.map(part => parseInt(part.id, 10))
+                tmpConfig.parts = tmpPartsList
+                formattedConfigs.push(tmpConfig)
             })
+            const order = {
+                "status": "paid",
+                "parts_ids": cartData.parts.map(part => part.id),
+                "configs": formattedConfigs
+            }
+            
+            console.log(order)
+
+            const result = await axios.patch(`${backEndRoot}/api/v1/orders`, { order }, { headers });
+            if (result.status === 200) {
+                alert("Order completed!");
+                setCartData({
+                    configs:[],
+                    parts: []
+                });
+            } else {
+                alert("Error... try again in a few minutes");
+            }
         } else {
-            alert("Error... try again in a few minutes")
+            alert("you need to log in first");
         }
     }  
 

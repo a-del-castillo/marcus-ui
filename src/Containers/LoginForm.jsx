@@ -3,10 +3,12 @@ import { connect } from "react-redux";
 import axios from "axios";
 
 const LoginForm = (props) => {
-    const { backEndRoot, loginData, setLoginData, session_clean, set_session, isLogged } = props;
+    const { backEndRoot, loginData, setLoginData, session_clean, set_session, isLogged, cartData, setCartData, addToCart } = props;
     const [error, setError] = useState(null);
-    const [username, setUsername] = useState(null)
-
+    const [username, setUsername] = useState(null);
+    const [showSignIn, setShowSignIn] = useState(false);
+    const [showOrders, setShowOrders] = useState(false);
+    
     const log_off = () => {
         setUsername(null)
         session_clean()
@@ -69,6 +71,60 @@ const LoginForm = (props) => {
         });
     };
 
+    const handleSignIn = (e) => {
+        e.preventDefault();
+        setShowSignIn(true)
+    }
+
+    const handleSignInCancel = (e) => {
+        e.preventDefault();
+        setShowSignIn(false)
+    }
+
+    const retrieveCustomerCart = async () => {
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${localStorage.token}`,
+        }
+        const response = await axios.get(`${backEndRoot}/api/v1/orders/show_current`, { headers });
+        console.log('retrieveCustomerCart', response)
+        if (response.status === 200 && response.data.order ){
+            const orderId = response.data.order.id;
+            
+            setCartData({
+                id: orderId,
+                configs: response.data.configs.concat(cartData.configs),
+                parts: response.data.parts.concat(cartData.parts)
+            })
+
+        }
+    }
+
+    const handleSignUpClick = async (e) => {
+        e.preventDefault();
+        const headers = {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+        }
+        const user = {
+            username:loginData.username,
+            password:loginData.password
+        }
+        const response = await axios.post(`${backEndRoot}/api/v1/users`, user, { headers });
+        
+        if (response.status === 200){
+            await login(user);
+            setShowSignIn(false);
+        }else{
+            alert('Error '+ response.error)
+        }
+        //setPartData(response.data)
+        //setPart(response.data)
+        
+
+    }
+
     const login = async (credentials) => {
         const username = credentials.username;
         const password = credentials.password;
@@ -82,8 +138,8 @@ const LoginForm = (props) => {
             if ( res.status === 200) {
                 const {data} = res
                 if (data.status !== "error") {
-                    log_in(data.data)
-                    
+                    log_in(data.data);
+                    retrieveCustomerCart()
                 }else{
                     setError(data.message);
                     log_off();
@@ -93,14 +149,49 @@ const LoginForm = (props) => {
         .catch((err) => {
             setError(err.response?.data?.message ? err.response.data.message : err.message);
         });
-    }
+    };
+
+    const handleViewOrders = (e) => {
+        setShowOrders(true);
+        e.preventDefault();
+    };
   
     return (
         <div className="LoginForm-wrapper">
             {isLogged ? (<div>
-                Welcome back {username}<br/><a onClick={handleLogOut} href="#">Sign out</a> 
-            </div>) :   
+                {setShowOrders && (<></>)}
+                Welcome {username}<br/>
+                <a onClick={handleViewOrders} href="#">View your orders</a><br/>
+                <a onClick={handleLogOut} href="#">Sign out</a>
+            </div>) :
             <form onSubmit={handleSubmit}>
+                {showSignIn && (
+                <div className="sign-in-wrapper">
+                    <h3>Sign up</h3>
+                    {error && <div>
+                        <span>{error}</span>
+                    </div>}
+                    <label htmlFor="loginUsername">Username: </label>
+                    <input
+                        type="text"
+                        id="loginUsername"
+                        name="username"
+                        value={loginData.username}
+                        onChange={handleChange}
+                    />
+                    <br />
+                    <label htmlFor="loginPassword">Password: </label>
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        name="password"
+                        value={loginData.password}
+                        onChange={handleChange}
+                    />
+                    <br />
+                    <input className="form-button" type="button" value="Sign up" onClick={handleSignUpClick} /><a className="sign-in-link" onClick={handleSignInCancel} href="#">Cancel</a>
+                </div>
+                )}
                 <h3>Login</h3>
                 {error && <div>
                     <span>{error}</span>
@@ -123,7 +214,7 @@ const LoginForm = (props) => {
                     onChange={handleChange}
                 />
                 <br />
-                <input className="form-button" type="submit" />
+                <input className="form-button" type="submit" /><a className="sign-in-link" onClick={handleSignIn} href="#">Sign up</a>
             </form>
             }
         </div>
