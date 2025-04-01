@@ -161,7 +161,7 @@ const App = () => {
 							isLogged={isLogged}
 							cartData={cartData}
 							setCartData={setCartData}
-							addToCart={addToCart}
+							userRole={userRole}
 						/>
 						<Cart 
 							backEndRoot={backEndRoot}

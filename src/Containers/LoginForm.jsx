@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
+import UserOrders from "../Components/UserOrders.jsx"
 import axios from "axios";
 
 const LoginForm = (props) => {
-    const { backEndRoot, loginData, setLoginData, session_clean, set_session, isLogged, cartData, setCartData, addToCart } = props;
+    const { backEndRoot, loginData, setLoginData, session_clean, set_session, isLogged, cartData, setCartData, userRole } = props;
     const [error, setError] = useState(null);
     const [username, setUsername] = useState(null);
     const [showSignIn, setShowSignIn] = useState(false);
     const [showOrders, setShowOrders] = useState(false);
-    
+    const [userOrders, setUserOrders] = useState([]);
+    const [retrieveOrders, setRetrieveOrders] = useState(true);
     const log_off = () => {
         setUsername(null)
         session_clean()
@@ -88,7 +90,7 @@ const LoginForm = (props) => {
             Authorization: `Bearer ${localStorage.token}`,
         }
         const response = await axios.get(`${backEndRoot}/api/v1/orders/show_current`, { headers });
-        console.log('retrieveCustomerCart', response)
+        
         if (response.status === 200 && response.data.order ){
             const orderId = response.data.order.id;
             
@@ -119,10 +121,6 @@ const LoginForm = (props) => {
         }else{
             alert('Error '+ response.error)
         }
-        //setPartData(response.data)
-        //setPart(response.data)
-        
-
     }
 
     const login = async (credentials) => {
@@ -155,13 +153,48 @@ const LoginForm = (props) => {
         setShowOrders(true);
         e.preventDefault();
     };
+
+    const handleUserModalClose = (e) => {
+        if( e.target.classList.contains('modal-content-close')) {
+            e.preventDefault();
+            setShowOrders(false);
+        }
+    }
   
+    const retrieveUsersOrders = async () => {
+        const token = localStorage.token;
+        
+        const response = await axios.get(`${backEndRoot}/api/v1/orders`,
+        {
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${token}`
+            }
+        })
+        setRetrieveOrders(false)
+        setUserOrders(response.data)
+    } 
+
+    if (userRole === 'admin' && retrieveOrders === true) {
+        retrieveUsersOrders()
+    }
+
     return (
+        <>
+        {showOrders && (
+            <UserOrders
+                handleUserModalClose={handleUserModalClose}
+                userOrders={userOrders}
+                backEndRoot={backEndRoot}
+                retrieveUsersOrders={retrieveUsersOrders}
+            />
+        )}
         <div className="LoginForm-wrapper">
+            
             {isLogged ? (<div>
-                {setShowOrders && (<></>)}
                 Welcome {username}<br/>
-                <a onClick={handleViewOrders} href="#">View your orders</a><br/>
+                { (userRole === 'admin') && (<span><a onClick={handleViewOrders} href="#">Manage user orders</a><br/></span>) }
                 <a onClick={handleLogOut} href="#">Sign out</a>
             </div>) :
             <form onSubmit={handleSubmit}>
@@ -217,7 +250,7 @@ const LoginForm = (props) => {
                 <input className="form-button" type="submit" /><a className="sign-in-link" onClick={handleSignIn} href="#">Sign up</a>
             </form>
             }
-        </div>
+        </div></>
     );
 
 }

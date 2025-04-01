@@ -159,7 +159,7 @@ input.text-specialprice{
 	min-height: 70vh;
 	background-color: transparent;
 }
-
+.user-orders-modal,
 .part-modal{
 	z-index: 9999;
     width: 100%;
@@ -170,6 +170,7 @@ input.text-specialprice{
     left: 0;
 }
 
+.user-orders-modal-content-wrapper,
 .part-modal-content-wrapper{
 	margin: 10% auto 10% auto;
 	border: solid 2px #FFF;
@@ -184,12 +185,19 @@ input.text-specialprice{
 
 }
 
+.user-orders-modal-content,
 .part-modal-content{
 	width: 100%;
 	padding: 10px 20px;
 	text-align: left;
 }
+.user-orders-modal-content{
+	overflow-x: auto;
+    width: calc(100% - 17px);
+	max-height: 500px;
+}
 
+.user-orders-content-details,
 .part-modal-content-details{
 	min-height: 200px;
 }
