@@ -45,7 +45,7 @@ const Cart = (props) => {
             
             console.log(order)
 
-            const result = await axios.patch(`${backEndRoot}/api/v1/orders`, { order }, { headers });
+            const result = await axios.post(`${backEndRoot}/api/v1/orders`, { order }, { headers });
             if (result.status === 200) {
                 alert("Order completed!");
                 setCartData({
